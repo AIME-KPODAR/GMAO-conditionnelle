@@ -1,0 +1,259 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Surveillance Maintenance Conditionnelle</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: indicateurs de synthèse, liste des équipements triée par gravité à gauche, courbes et recommandations à droite (empilées sur mobile) */
+:root{
+  --bg:#f3f5f9; --surface:#ffffff; --fg:#161d2b; --muted:#5a6578; --line:#d9dfeb;
+  --accent:#2557a7; --accent-fg:#ffffff; --accent-soft:#e3ecfa;
+  --bad:#b3261e; --bad-soft:#fbe4e1; --warn:#8a5a00; --warn-soft:#fdf0d0; --good:#1d6b3a; --good-soft:#dff2e5; --info:#2557a7; --info-soft:#e3ecfa;
+  --font:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0f1420; --surface:#171e2d; --fg:#e6ebf5; --muted:#9aa6bb; --line:#283147;
+  --accent:#7fb0ff; --accent-fg:#06142b; --accent-soft:#1a2a47;
+  --bad:#ff8a80; --bad-soft:#3a1d1b; --warn:#f2c14e; --warn-soft:#38300f; --good:#7fd79b; --good-soft:#14301f; --info:#7fb0ff; --info-soft:#1a2a47; color-scheme:dark;}}
+:root[data-theme="dark"]{
+  --bg:#0f1420; --surface:#171e2d; --fg:#e6ebf5; --muted:#9aa6bb; --line:#283147;
+  --accent:#7fb0ff; --accent-fg:#06142b; --accent-soft:#1a2a47;
+  --bad:#ff8a80; --bad-soft:#3a1d1b; --warn:#f2c14e; --warn-soft:#38300f; --good:#7fd79b; --good-soft:#14301f; --info:#7fb0ff; --info-soft:#1a2a47; color-scheme:dark;}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--font);font-size:14px;line-height:1.5;
+  padding-block:20px 40px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.wrap{max-width:1180px;margin:0 auto;display:flex;flex-direction:column;gap:18px}
+header{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:flex-end;gap:8px 16px}
+h1{font-size:22px;margin:0;font-weight:600;letter-spacing:-.01em;text-wrap:balance}
+.sub{color:var(--muted);margin:2px 0 0}
+.actions{display:flex;gap:8px;flex-wrap:wrap}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px}
+.kpi{background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:12px 14px;min-width:0}
+.kpi .l{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
+.kpi .v{font-family:var(--mono);font-size:28px;font-weight:500;font-variant-numeric:tabular-nums;line-height:1.2}
+.kpi .n{font-size:12px;color:var(--muted)}
+.kpi.bad .v{color:var(--bad)} .kpi.warn .v{color:var(--warn)} .kpi.good .v{color:var(--good)}
+.main{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.5fr);gap:18px;align-items:start}
+@media (max-width:900px){.main{grid-template-columns:minmax(0,1fr)}}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:6px;min-width:0}
+.panel>h2{font-size:14px;margin:0;padding:12px 14px;border-bottom:1px solid var(--line);font-weight:600}
+input,select,button{font:inherit;color:var(--fg)}
+input,select{background:var(--bg);border:1px solid var(--line);border-radius:4px;padding:6px 8px;min-width:0}
+input:focus-visible,select:focus-visible,button:focus-visible,.eq:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+.list{display:flex;flex-direction:column}
+.eq{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:11px 14px;border-bottom:1px solid var(--line);cursor:pointer;min-width:0}
+.eq:last-child{border-bottom:0}
+.eq:hover{background:var(--accent-soft)}
+.eq[aria-selected="true"]{background:var(--accent-soft);box-shadow:inset 3px 0 0 var(--accent)}
+.eq .t{min-width:0}.name{font-weight:500}.loc{color:var(--muted);font-size:12px}
+.pill{display:inline-block;border-radius:999px;padding:2px 10px;font-size:12px;font-weight:500;white-space:nowrap}
+.pill.bad{background:var(--bad-soft);color:var(--bad)}.pill.warn{background:var(--warn-soft);color:var(--warn)}.pill.good{background:var(--good-soft);color:var(--good)}.pill.info{background:var(--info-soft);color:var(--info)}
+.btn{background:var(--accent);color:var(--accent-fg);border:0;border-radius:4px;padding:6px 12px;cursor:pointer;font-weight:500}
+.btn.ghost{background:transparent;color:var(--fg);border:1px solid var(--line)}
+.btn.small{padding:3px 9px;font-size:12px}
+.detail{padding:14px;display:flex;flex-direction:column;gap:16px}
+.detail h3{margin:0;font-size:16px}
+.reco{border-radius:6px;padding:10px 12px;font-weight:500}
+.reco.bad{background:var(--bad-soft);color:var(--bad)}.reco.warn{background:var(--warn-soft);color:var(--warn)}.reco.good{background:var(--good-soft);color:var(--good)}.reco.info{background:var(--info-soft);color:var(--info)}
+.ind{border:1px solid var(--line);border-radius:6px;padding:12px;display:flex;flex-direction:column;gap:6px;min-width:0}
+.ind .top{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;align-items:baseline}
+.ind .val{font-family:var(--mono);font-size:20px;font-weight:500;font-variant-numeric:tabular-nums}
+.ind .val small{font-size:12px;color:var(--muted);font-weight:400}
+.ind svg{width:100%;height:auto;display:block}
+.ind .meta{font-size:12px;color:var(--muted);display:flex;gap:6px 16px;flex-wrap:wrap}
+.legend i{display:inline-block;width:14px;height:0;border-top:2px dashed;vertical-align:middle;margin-right:4px}
+.legend .w{color:var(--warn)}.legend .c{color:var(--bad)}
+form.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:8px;align-items:end}
+form.grid label{display:flex;flex-direction:column;gap:2px;font-size:12px;color:var(--muted)}
+.box{border:1px solid var(--line);border-radius:6px;padding:12px;background:var(--bg);display:flex;flex-direction:column;gap:8px}
+.note{font-size:12px;color:var(--muted)}
+</style>
+
+<div class="wrap">
+  <header>
+    <div>
+      <h1>Surveillance de maintenance conditionnelle</h1>
+      <p class="sub">Indicateurs d'état, seuils et tendances pour décider d'intervenir au bon moment.</p>
+    </div>
+    <div class="actions">
+      <button class="btn" id="sim">Simuler un jour de relevés</button>
+      <button class="btn ghost" id="reset">Réinitialiser les exemples</button>
+    </div>
+  </header>
+
+  <section class="kpis" id="kpis" aria-label="Synthèse"></section>
+
+  <div class="main">
+    <section class="panel">
+      <h2>Équipements surveillés</h2>
+      <div class="list" id="list"></div>
+    </section>
+    <section class="panel" id="detail" aria-live="polite"></section>
+  </div>
+  <p class="note">Les relevés affichés sont des exemples simulés. La tendance est une droite calculée sur les 10 derniers relevés, utilisée pour estimer le délai avant le seuil. Elle sert d'aide à la décision et ne remplace pas un contrôle sur site. Les modifications sont enregistrées dans ce navigateur uniquement.</p>
+</div>
+
+<script>
+(function(){
+  var KEY='maintenance-conditionnelle-v1';
+  var MAXPTS=60,SHOW=30,WIN=10,HORIZON=14;
+  function esc(t){var d=document.createElement('div');d.textContent=t==null?'':String(t);return d.innerHTML}
+  function f(n,d){return Number(n).toLocaleString('fr-FR',{minimumFractionDigits:d==null?1:d,maximumFractionDigits:d==null?1:d})}
+  var rs=1;function rnd(){rs=(rs*16807)%2147483647;return rs/2147483647}
+  function series(a,b,noise,n){var o=[];for(var i=0;i<n;i++){o.push(+(a+(b-a)*(i/(n-1))+(rnd()-.5)*2*noise).toFixed(2))}return o}
+  function seed(){
+    rs=7;var N=30;
+    return [
+      {id:1,nom:'Moteur du convoyeur L1',lieu:'Ligne de production',ind:[
+        {nom:'Température bobinage',u:'°C',dir:'high',warn:85,crit:100,v:series(71,87,.8,N)},
+        {nom:'Vibration',u:'mm/s',dir:'high',warn:4.5,crit:7.1,v:series(2.6,4.0,.15,N)},
+        {nom:'Courant absorbé',u:'A',dir:'high',warn:28,crit:33,v:series(24,24.6,.6,N)}]},
+      {id:2,nom:'Pompe de circulation P-203',lieu:'Station de pompage',ind:[
+        {nom:'Pression de refoulement',u:'bar',dir:'low',warn:3.0,crit:2.2,v:series(4.2,3.35,.05,N)},
+        {nom:'Vibration',u:'mm/s',dir:'high',warn:4.5,crit:7.1,v:series(2.7,2.9,.15,N)},
+        {nom:'Température roulement',u:'°C',dir:'high',warn:75,crit:90,v:series(58,62,1,N)}]},
+      {id:3,nom:'Compresseur d\'air n°1',lieu:'Atelier A',ind:[
+        {nom:'Température huile',u:'°C',dir:'high',warn:90,crit:105,v:series(80,93,.7,N)},
+        {nom:'Pression d\'huile',u:'bar',dir:'low',warn:2.0,crit:1.5,v:series(2.9,2.45,.04,N)}]},
+      {id:4,nom:'Onduleur 10 kVA',lieu:'Salle serveur',ind:[
+        {nom:'Tension batterie',u:'V',dir:'low',warn:11.8,crit:11.2,v:series(12.6,12.15,.03,N)},
+        {nom:'Température batterie',u:'°C',dir:'high',warn:35,crit:45,v:series(28,31,.5,N)}]},
+      {id:5,nom:'Climatiseur salle serveur',lieu:'Salle serveur',ind:[
+        {nom:'Température de reprise',u:'°C',dir:'high',warn:26,crit:30,v:series(23,23.4,.3,N)},
+        {nom:'Pression du gaz',u:'bar',dir:'low',warn:8,crit:6.5,v:series(10,9.2,.1,N)}]}
+    ];
+  }
+  var data;
+  try{var raw=localStorage.getItem(KEY);data=raw?JSON.parse(raw):null}catch(e){data=null}
+  if(!Array.isArray(data))data=seed();
+  function save(){try{localStorage.setItem(KEY,JSON.stringify(data))}catch(e){}}
+
+  function slope(v){
+    var w=v.slice(-WIN),n=w.length;if(n<3)return 0;
+    var sx=0,sy=0,sxy=0,sxx=0;
+    for(var i=0;i<n;i++){sx+=i;sy+=w[i];sxy+=i*w[i];sxx+=i*i}
+    var den=n*sxx-sx*sx;return den?(n*sxy-sx*sy)/den:0;
+  }
+  function worse(i,x,t){return i.dir==='high'?x>=t:x<=t}
+  function eta(i,t){
+    var last=i.v[i.v.length-1],s=slope(i.v);
+    if(worse(i,last,t))return 0;
+    var toward=i.dir==='high'?s>0:s<0;
+    if(!toward||Math.abs(s)<1e-9)return null;
+    return (t-last)/s;
+  }
+  function evalInd(i){
+    var last=i.v[i.v.length-1],e1=eta(i,i.warn),e2=eta(i,i.crit);
+    var lvl,k;
+    if(worse(i,last,i.crit)){lvl=3;k='bad'}
+    else if(worse(i,last,i.warn)){lvl=2;k='warn'}
+    else if(e1!=null&&e1<=HORIZON){lvl=1;k='info'}
+    else{lvl=0;k='good'}
+    return {lvl:lvl,k:k,e1:e1,e2:e2,last:last};
+  }
+  var LBL=['Normal','Sous surveillance','Alerte','Critique'];
+  function evalEq(e){
+    var best={lvl:-1},ind=null;
+    e.ind.forEach(function(i){var r=evalInd(i);if(r.lvl>best.lvl){best=r;ind=i}});
+    best.ind=ind;best.label=LBL[best.lvl];return best;
+  }
+  function reco(r){
+    var n=r.ind?r.ind.nom.toLowerCase():'';
+    if(r.lvl===3)return ['bad','Arrêter ou réduire la charge et intervenir sans délai : '+n+' a dépassé le seuil critique.'];
+    if(r.lvl===2)return ['warn','Planifier une intervention sous 7 jours : '+n+' a dépassé le seuil d\'alerte.'];
+    if(r.lvl===1)return ['info','Prévoir un contrôle avant environ '+Math.max(1,Math.floor(r.e1))+' j : '+n+' approche du seuil d\'alerte.'];
+    return ['good','Aucune intervention nécessaire. Tous les indicateurs sont stables et dans les limites.'];
+  }
+  var sel=data.length?data[0].id:null,confirmReset=false;
+  function find(id){for(var i=0;i<data.length;i++)if(data[i].id===id)return data[i];return null}
+
+  function spark(i){
+    var vals=i.v.slice(-SHOW),W=300,H=84,px=6,py=8;
+    var lo=Math.min.apply(null,vals.concat([i.warn])),hi=Math.max.apply(null,vals.concat([i.warn]));
+    if(Math.abs(i.crit-(i.dir==='high'?hi:lo))<(hi-lo)*1.2+1e-9){lo=Math.min(lo,i.crit);hi=Math.max(hi,i.crit)}
+    var span=(hi-lo)||1;lo-=span*.08;hi+=span*.08;span=hi-lo;
+    function X(k){return px+(W-2*px)*(vals.length>1?k/(vals.length-1):0)}
+    function Y(v){return H-py-(H-2*py)*((v-lo)/span)}
+    var pts=vals.map(function(v,k){return X(k).toFixed(1)+','+Y(v).toFixed(1)}).join(' ');
+    var s='<svg viewBox="0 0 '+W+' '+H+'" role="img" aria-label="Évolution de '+esc(i.nom)+'">';
+    [[i.warn,'var(--warn)'],[i.crit,'var(--bad)']].forEach(function(t){
+      if(t[0]>=lo&&t[0]<=hi)s+='<line x1="'+px+'" x2="'+(W-px)+'" y1="'+Y(t[0]).toFixed(1)+'" y2="'+Y(t[0]).toFixed(1)+'" stroke="'+t[1]+'" stroke-width="1.2" stroke-dasharray="4 3"/>';
+    });
+    s+='<polyline points="'+pts+'" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>';
+    s+='<circle cx="'+X(vals.length-1).toFixed(1)+'" cy="'+Y(vals[vals.length-1]).toFixed(1)+'" r="3.5" fill="var(--accent)"/></svg>';
+    return s;
+  }
+
+  function renderKpis(){
+    var c={0:0,1:0,2:0,3:0};
+    data.forEach(function(e){c[evalEq(e).lvl]++});
+    var nInd=0,trend=0;
+    data.forEach(function(e){e.ind.forEach(function(i){nInd++;var r=evalInd(i);if(r.lvl===1)trend++})});
+    document.getElementById('kpis').innerHTML=
+      '<div class="kpi"><div class="l">Surveillés</div><div class="v">'+data.length+'</div><div class="n">'+nInd+' indicateurs suivis</div></div>'+
+      '<div class="kpi '+(c[3]?'bad':'good')+'"><div class="l">Critiques</div><div class="v">'+c[3]+'</div><div class="n">intervention immédiate</div></div>'+
+      '<div class="kpi '+(c[2]?'warn':'good')+'"><div class="l">En alerte</div><div class="v">'+c[2]+'</div><div class="n">intervention à planifier</div></div>'+
+      '<div class="kpi '+(trend?'warn':'good')+'"><div class="l">Dérives</div><div class="v">'+trend+'</div><div class="n">seuil atteint sous '+HORIZON+' jours</div></div>'+
+      '<div class="kpi good"><div class="l">Normaux</div><div class="v">'+c[0]+'</div><div class="n">aucune action requise</div></div>';
+  }
+
+  function renderList(){
+    var arr=data.map(function(e){return {e:e,r:evalEq(e)}}).sort(function(a,b){return b.r.lvl-a.r.lvl});
+    document.getElementById('list').innerHTML=arr.map(function(x){
+      return '<div class="eq" role="button" tabindex="0" data-id="'+x.e.id+'" aria-selected="'+(x.e.id===sel)+'">'+
+        '<div class="t"><div class="name">'+esc(x.e.nom)+'</div><div class="loc">'+esc(x.e.lieu)+(x.r.lvl>0?' · '+esc(x.r.ind.nom):'')+'</div></div>'+
+        '<span class="pill '+x.r.k+'">'+x.r.label+'</span></div>';
+    }).join('');
+  }
+
+  function renderDetail(){
+    var p=document.getElementById('detail'),e=find(sel);
+    if(!e){p.innerHTML='<h2>Fiche équipement</h2><div class="note" style="padding:14px">Sélectionnez un équipement.</div>';return}
+    var r=evalEq(e),rc=reco(r);
+    var inds=e.ind.map(function(i,idx){
+      var q=evalInd(i),s=slope(i.v);
+      var tr=Math.abs(s)<1e-9?'Stable':'Tendance : '+(s>0?'+':'')+f(s,2)+' '+esc(i.u)+' par relevé';
+      var proj='';
+      if(q.lvl<2&&q.e1!=null)proj='Seuil d\'alerte dans environ '+Math.max(1,Math.round(q.e1))+' relevé(s)';
+      else if(q.lvl===2&&q.e2!=null)proj='Seuil critique dans environ '+Math.max(1,Math.round(q.e2))+' relevé(s)';
+      return '<div class="ind"><div class="top"><strong>'+esc(i.nom)+'</strong><span class="pill '+q.k+'">'+LBL[q.lvl]+'</span></div>'+
+        '<div class="val">'+f(q.last,2)+' <small>'+esc(i.u)+'</small></div>'+spark(i)+
+        '<div class="meta legend"><span class="w"><i></i>Alerte '+f(i.warn,1)+' '+esc(i.u)+'</span><span class="c"><i></i>Critique '+f(i.crit,1)+' '+esc(i.u)+'</span></div>'+
+        '<div class="meta"><span>'+tr+'</span>'+(proj?'<span>'+proj+'</span>':'')+'</div></div>';
+    }).join('');
+    var opts=e.ind.map(function(i,idx){return '<option value="'+idx+'">'+esc(i.nom)+' ('+esc(i.u)+')</option>'}).join('');
+    p.innerHTML='<h2>Fiche équipement</h2><div class="detail">'+
+      '<div><h3>'+esc(e.nom)+'</h3><div class="loc">'+esc(e.lieu)+'</div></div>'+
+      '<div class="reco '+rc[0]+'">'+esc(rc[1])+'</div>'+inds+
+      '<form class="box grid" id="readForm"><label>Indicateur<select id="rInd">'+opts+'</select></label>'+
+      '<label>Nouvelle mesure<input id="rVal" type="number" step="any" required placeholder="Valeur relevée"></label>'+
+      '<button class="btn" type="submit">Ajouter le relevé</button></form></div>';
+  }
+
+  function renderAll(){renderKpis();renderList();renderDetail()}
+
+  document.getElementById('list').addEventListener('click',function(ev){var t=ev.target.closest('.eq');if(t){sel=+t.dataset.id;renderList();renderDetail()}});
+  document.getElementById('list').addEventListener('keydown',function(ev){if(ev.key==='Enter'){var t=ev.target.closest('.eq');if(t){sel=+t.dataset.id;renderList();renderDetail()}}});
+  document.getElementById('detail').addEventListener('submit',function(ev){
+    if(ev.target.id!=='readForm')return;ev.preventDefault();
+    var e=find(sel),i=e.ind[+document.getElementById('rInd').value],v=parseFloat(document.getElementById('rVal').value);
+    if(isNaN(v))return;i.v.push(v);if(i.v.length>MAXPTS)i.v.shift();save();renderAll();
+  });
+  document.getElementById('sim').addEventListener('click',function(){
+    data.forEach(function(e){e.ind.forEach(function(i){
+      var last=i.v[i.v.length-1],s=slope(i.v),span=Math.abs(i.crit-i.warn)||1;
+      var nv=last+s+(Math.random()-.5)*span*.04;
+      i.v.push(+nv.toFixed(2));if(i.v.length>MAXPTS)i.v.shift();
+    })});
+    save();renderAll();
+  });
+  var rb=document.getElementById('reset');
+  rb.addEventListener('click',function(){
+    if(!confirmReset){confirmReset=true;rb.textContent='Confirmer la réinitialisation';return}
+    confirmReset=false;rb.textContent='Réinitialiser les exemples';data=seed();sel=data[0].id;save();renderAll();
+  });
+  renderAll();
+})();
+</script>
+
+</body></html>
